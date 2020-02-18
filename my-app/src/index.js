@@ -11,17 +11,9 @@ function Square(props){
 }
 
 class Board extends React.Component {
-  constructor(props){
-    super(props)
-    this.state = {
-      squares: Array(9).fill(null),
-      xIsNext: true,
-      status: 'Next player: X'
-    }
-  }
 
   renderSquare(i) {
-    return <Square value={this.state.squares[i]} onClick={ ()=> {this.handleClick(i)}}/>;
+    return <Square value={this.props.squares[i]} onClick={ ()=> {this.props.onClick(i)}}/>;
   }
 
   render() {
@@ -29,7 +21,7 @@ class Board extends React.Component {
     // let status = this.state.status;
     return (
       <div>
-        <div className="status">{this.state.status}</div>
+        <div className="status"></div>
         <div className="board-row">
           {this.renderSquare(0)}
           {this.renderSquare(1)}
@@ -49,8 +41,73 @@ class Board extends React.Component {
     );
   }
 
+  
+}
+  
+class Game extends React.Component {
+  constructor(props){
+    super(props);
+    this.state = {
+      history: [{squares: Array(9).fill(null), moveNoIndex: null}],
+      xIsNext: true,
+      status: 'Next player: X',
+      stepNo: 0
+    };
+  }
+  jumpTo(stepNo){
+    this.setState({
+      stepNo: stepNo,
+      xIsNext: (stepNo % 2) === 0
+    })
+  }
+
+  getMoveLocation(moveNoIndex){
+    const row = Math.floor(moveNoIndex/3)+1;
+    const column = moveNoIndex%3 + 1;
+    return {row: row, column: column};
+  }
+
+  displayLocation(moveNoIndex){
+    const location = this.getMoveLocation(moveNoIndex);
+    return '('+location.row+','+location.column+')';
+  }
+
+  render() {
+    const current = this.state.history[this.state.stepNo];
+    const moves = this.state.history.map((step, move) => {
+        let desc = move ? 
+            'Go to move #' + move + ' location:'+(this.displayLocation(step.moveNoIndex)) :
+            'Go to game start';
+        const fw = (this.state.stepNo === move) ? 'bold' : 'normal';
+        return (
+              <li key={move}>
+                <button onClick={() => {this.jumpTo(move)}} style={{'fontWeight': fw}}>
+                  {desc}
+                </button>
+              </li>
+        )
+    });
+
+    return (
+      <div className="game">
+        <div className="game-board">
+          <Board squares={current.squares} onClick={(i) => {this.handleClick(i)} }/>
+        </div>
+        <div className="game-info">
+          <div>{this.state.status}</div>
+          <ol>{moves}</ol>
+        </div>
+        <div>
+          {/* <ShoppingList name="Tiger" /> */}
+        </div>
+      </div>
+      
+    );
+  }
+
   handleClick(i){
-    const squares = this.state.squares.slice();
+    const history = this.state.history.slice(0, this.state.stepNo+1);
+    const squares = history[history.length-1].squares.slice();
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
@@ -65,33 +122,15 @@ class Board extends React.Component {
     }
 
     this.setState({
-      squares: squares,
+      history: history.concat([{squares: squares, moveNoIndex: i}]),
       xIsNext: !this.state.xIsNext,
-      status: status
+      status: status,
+      stepNo: history.length
     });
   }
 }
-  
-class Game extends React.Component {
-  render() {
-    return (
-      <div className="game">
-        <div className="game-board">
-          <Board />
-        </div>
-        <div className="game-info">
-          <div>{/* status */}</div>
-          <ol>{/* TODO */}</ol>
-        </div>
-        <div>
-          <ShoppingList name="Tiger" />
-        </div>
-      </div>
-      
-    );
-  }
-}
 
+ // eslint-disable-next-line
 class ShoppingList extends React.Component {
   render() {
     return (
